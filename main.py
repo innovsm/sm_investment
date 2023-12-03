@@ -7,6 +7,41 @@ import requests
 import pandas as pd
 
 
+def cash_flows(company):
+    url = 'https://ticker.finology.in/company/{}'.format(company)  # Replace this with the target website URL
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'}
+    response = requests.get(url, headers=headers)
+    if(response.status_code == 200):
+        data = BeautifulSoup(response.text, 'html.parser')
+        data_extracted = data_extracted = data.find("div",{"class": "innerpagecontent"}).find("div", {"id": "mainContent_cashflows"}).find("table")
+        # extracted rows 
+        rows = ['Profit from operations ','Adjustment ','Changes in Assets & Liabilities ','Tax Paid ','Operating Cash Flow ','Investing Cash Flow ','Financing Cash Flow ','Net Cash Flow ']
+        cols = [  'Mar 2019', 'Mar 2020', 'Mar 2021', 'Mar 2022', 'Mar 2023']
+        # main data
+        x_data = data_extracted.find_all("td")
+        alfa = []
+        temp_file = []
+        for i in x_data:
+            temp_text = i.text
+            temp_text = temp_text.strip()
+
+            #print(temp_text)
+            if(temp_text != ''):
+                temp_file.append(temp_text)
+            if(len(temp_file) == 5):
+                alfa.append(temp_file)
+                temp_file = []
+
+        #print(alfa)
+        dummy = pd.DataFrame(alfa,columns=cols, index =rows)
+        return dummy
+        
+        
+        
+    else:
+        print("Request failed with status code: {}".format(response.status_code))
+
 def balance_sheet(company):
     url = 'https://ticker.finology.in/company/{}'.format(company)  # Replace this with the target website URL
     headers = {
@@ -211,7 +246,7 @@ if(company_options):
     st.dataframe(quarterly_financials_data, width=900, height=500)
     transposed_dataframe = quarterly_financials_data.T
     # visulization
-    st.subheader("Visualization")
+    st.subheader("Visualization of Financial")
     options = st.selectbox("Select", transposed_dataframe.columns)
 
 
@@ -229,10 +264,21 @@ if(company_options):
     st.dataframe(data_balance_sheet, width = 900 , height = 700)
 
     # visulization
-    st.subheader("Visualization(all data in Cr.)")
+    st.subheader("Visualization of balance sheet(all data in Cr.)")
     transpose_balance_sheet = data_balance_sheet.T
     options = st.multiselect("Select", transpose_balance_sheet.columns)
     st.line_chart(transpose_balance_sheet[options])
+
+    # cash - flows 
+    st.header("Cashflows")
+    data_cash_flows = cash_flows(company_options)
+    st.dataframe(data_cash_flows, width = 900 , height = 500)
+
+    # visulization
+    st.subheader("Visualization of cash flows(all data in Cr.)")
+    transpose_cash_flows = data_cash_flows.T
+    options = st.multiselect("Select", transpose_cash_flows.columns)
+    st.line_chart(transpose_cash_flows[options])
 
 
 
